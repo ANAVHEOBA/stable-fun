@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useStablecoinProgram } from '@/lib/hooks/useStablecoinProgram';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { Card } from '../common/Card';
@@ -23,6 +24,7 @@ interface FormData {
 
 export function CreateForm() {
   const { publicKey } = useWallet();
+  const { program, loading: programLoading, error: programError } = useStablecoinProgram();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -42,15 +44,22 @@ export function CreateForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!publicKey) return;
+    if (!publicKey || !program) return;
 
     setLoading(true);
     try {
-      // Add your stablecoin creation logic here
-      console.log('Creating stablecoin:', formData);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+      const signature = await program.initialize({
+        name: formData.name,
+        symbol: formData.symbol,
+        targetCurrency: formData.targetCurrency,
+        initialSupply: Number(formData.collateralAmount)
+      });
+
+      console.log("Created stablecoin:", signature);
+      // Add success notification here
     } catch (error) {
-      console.error('Error creating stablecoin:', error);
+      console.error("Failed to create stablecoin:", error);
+      // Add error notification here
     } finally {
       setLoading(false);
     }
@@ -182,13 +191,13 @@ export function CreateForm() {
 
       <div className="flex justify-between">
         {step > 1 && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setStep(step - 1)}
-          >
-            Back
-          </Button>
+          <Button 
+          type="submit"
+          isLoading={loading || programLoading}
+          disabled={!publicKey || !program}
+        >
+          Create Stablecoin
+        </Button>
         )}
         
         <Button

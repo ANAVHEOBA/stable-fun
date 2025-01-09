@@ -13,6 +13,8 @@ import {
   ExternalLink,
   Copy
 } from 'lucide-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 interface ProfileSettings {
   notifications: {
@@ -147,10 +149,9 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     ))}
-                    <button className="w-full bg-[#2A2A2A] text-[#E2FF66] rounded-lg py-3 
-                      hover:bg-[#3A3A3A] transition-colors duration-200">
-                      Connect Another Wallet
-                    </button>
+                    <WalletMultiButton 
+                      className="w-full bg-[#2A2A2A] text-[#E2FF66] rounded-lg py-3 hover:bg-[#3A3A3A] transition-colors duration-200"
+                    />
                   </div>
                 </div>
               </div>

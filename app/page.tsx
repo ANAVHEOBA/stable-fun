@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Shield, Coins, TrendingUp } from 'lucide-react';
+import { WalletButton } from '../components/wallet/WalletButton';
 
 export default function HomePage() {
   const features = [
@@ -40,10 +41,9 @@ export default function HomePage() {
               >
                 Dashboard
               </Link>
-              <button className="ml-4 px-4 py-2 border border-[#E2FF66] text-[#E2FF66] 
-                rounded-lg hover:bg-[#E2FF66] hover:text-black transition-colors duration-200">
-                Connect Wallet
-              </button>
+              <div className="ml-4">
+                <WalletButton />
+              </div>
             </div>
           </div>
         </div>

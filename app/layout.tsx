@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CustomWalletProvider } from '../components/wallet/WalletProvider';
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -14,18 +15,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {/* Wallet Provider would go here */}
-        <div className="min-h-screen bg-[#121212]">
-          {children}
-        </div>
-
-        {/* Toast Container would go here */}
+      <body>
+        <CustomWalletProvider>
+          <div className="min-h-screen bg-[#121212]">
+            {children}
+          </div>
+        </CustomWalletProvider>
       </body>
     </html>
   );

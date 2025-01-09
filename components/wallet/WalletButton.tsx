@@ -1,7 +1,9 @@
+// WalletButton.tsx
 'use client';
 
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletModalButton } from '@solana/wallet-adapter-react-ui';
 import { Button } from '../common/Button';
 import { Wallet, ChevronDown, Copy, ExternalLink, LogOut } from 'lucide-react';
 
@@ -9,9 +11,8 @@ export function WalletButton() {
   const { 
     wallet, 
     publicKey, 
-    connecting, 
-    disconnecting, 
-    connect, 
+    connecting,
+    connect,
     disconnect 
   } = useWallet();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -38,13 +39,10 @@ export function WalletButton() {
 
   if (!wallet) {
     return (
-      <Button 
-        variant="outline"
-        leftIcon={<Wallet className="h-4 w-4" />}
-        onClick={() => {/* Open wallet modal */}}
-      >
+      <WalletModalButton className="px-4 py-2 border border-[#E2FF66] rounded-md text-[#E2FF66] 
+        hover:bg-[#E2FF66] hover:text-black transition-colors duration-200">
         Select Wallet
-      </Button>
+      </WalletModalButton>
     );
   }
 

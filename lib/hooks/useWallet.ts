@@ -28,7 +28,7 @@ export function useWallet() {
   });
 
   // Example RPC endpoint - replace with your preferred endpoint
-  const connection = new Connection('https://api.mainnet-beta.solana.com');
+  const connection = new Connection('https://api.devnet.solana.com');
 
   const fetchBalance = useCallback(async () => {
     if (!publicKey) return;
@@ -89,3 +89,5 @@ export function useWallet() {
     refreshBalance: fetchBalance,
   };
 }
+
+

@@ -1,15 +1,18 @@
+// components/layout/Navbar.tsx
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Bell, ChevronDown } from 'lucide-react';
-import { Button } from '../common/Button';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Menu, X, BellDot } from 'lucide-react';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const [notifications] = useState(3); // Example notification count
+  const { publicKey } = useWallet();
+  const [notifications] = useState(3);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard' },
@@ -21,59 +24,53 @@ export function Navbar() {
     <nav className="bg-[#1A1A1A] border-b border-[#2A2A2A]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Logo and Desktop Navigation */}
+          {/* Logo section */}
           <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-[#E2FF66] text-xl font-bold">
-                Stable.fun
-              </Link>
-            </div>
-            <div className="hidden md:ml-6 md:flex md:space-x-4 items-center">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    pathname === item.href
-                      ? 'text-[#E2FF66]'
-                      : 'text-gray-300 hover:text-[#E2FF66]'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
+            <Link href="/" className="flex items-center">
+              <span className="text-xl font-bold text-[#E2FF66]">Stable.fun</span>
+            </Link>
           </div>
 
-          {/* Desktop Right Section */}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Notifications */}
-            <button className="relative p-2 text-gray-400 hover:text-[#E2FF66] transition-colors duration-200">
-              <Bell className="h-5 w-5" />
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  pathname === item.href
+                    ? 'text-[#E2FF66] bg-[#2A2A2A]'
+                    : 'text-gray-300 hover:text-[#E2FF66]'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+
+          {/* Notifications & Wallet */}
+          <div className="hidden md:flex items-center space-x-4">
+            <button className="relative p-2 text-gray-400 hover:text-white">
+              <BellDot className="h-6 w-6" />
               {notifications > 0 && (
-                <span className="absolute top-0 right-0 -mt-1 -mr-1 px-1.5 py-0.5 text-xs 
-                  bg-[#E2FF66] text-black rounded-full">
+                <span className="absolute top-1 right-1 h-4 w-4 bg-[#E2FF66] rounded-full flex items-center justify-center text-xs text-black">
                   {notifications}
                 </span>
               )}
             </button>
-
-            {/* Wallet Button */}
-            <Button variant="outline">
-              Connect Wallet
-            </Button>
+            <WalletMultiButton className="!bg-[#2A2A2A] hover:!bg-[#3A3A3A] !text-[#E2FF66] !border !border-[#E2FF66]" />
           </div>
 
           {/* Mobile menu button */}
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-md text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white"
             >
               {isOpen ? (
-                <X className="block h-6 w-6" />
+                <X className="h-6 w-6" />
               ) : (
-                <Menu className="block h-6 w-6" />
+                <Menu className="h-6 w-6" />
               )}
             </button>
           </div>
@@ -90,16 +87,15 @@ export function Navbar() {
               className={`block px-3 py-2 rounded-md text-base font-medium ${
                 pathname === item.href
                   ? 'text-[#E2FF66] bg-[#2A2A2A]'
-                  : 'text-gray-300 hover:text-[#E2FF66] hover:bg-[#2A2A2A]'
+                  : 'text-gray-300 hover:text-[#E2FF66]'
               }`}
-              onClick={() => setIsOpen(false)}
             >
               {item.name}
             </Link>
           ))}
-          <Button variant="outline" fullWidth className="mt-4">
-            Connect Wallet
-          </Button>
+          <div className="px-3 py-2">
+            <WalletMultiButton className="!bg-[#2A2A2A] hover:!bg-[#3A3A3A] !text-[#E2FF66] !border !border-[#E2FF66] w-full" />
+          </div>
         </div>
       </div>
     </nav>

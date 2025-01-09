@@ -1,3 +1,4 @@
+// WalletProvider.tsx
 'use client';
 
 import { useMemo } from 'react';
@@ -11,23 +12,20 @@ interface Props {
   children: React.ReactNode;
 }
 
-export function CustomWalletProvider({ children }: Props) { // Renamed from WalletProvider
+export function CustomWalletProvider({ children }: Props) {
   const network = WalletAdapterNetwork.Devnet;
 
-  // RPC endpoint
   const endpoint = useMemo(() => {
     return process.env.NEXT_PUBLIC_RPC_ENDPOINT || clusterApiUrl(network);
   }, [network]);
 
-  // Wallets that are available to connect
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter({ network }),
   ], [network]);
 
-  // Connection config
   const config = useMemo(() => ({
-    commitment: 'confirmed' as Commitment, // Explicitly type as Commitment
+    commitment: 'confirmed' as Commitment,
     wsEndpoint: process.env.NEXT_PUBLIC_WS_ENDPOINT,
   }), []);
 

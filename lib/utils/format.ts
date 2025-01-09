@@ -84,3 +84,8 @@ export const formatNumber = (num: number, options?: {
   
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
   };
+
+
+  export const cn = (...classes: (string | undefined | boolean)[]) => {
+    return classes.filter(Boolean).join(' ');
+  };

@@ -11,6 +11,7 @@ import {
   LogOut,
   Wallet
 } from 'lucide-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export default function DashboardLayout({
   children,
@@ -88,11 +89,7 @@ export default function DashboardLayout({
 
           {/* Wallet Connection */}
           <div className="flex items-center space-x-4">
-            <button className="flex items-center px-4 py-2 text-sm border border-[#E2FF66] 
-              text-[#E2FF66] rounded-lg hover:bg-[#E2FF66] hover:text-black transition-colors duration-200">
-              <Wallet className="h-4 w-4 mr-2" />
-              Connect Wallet
-            </button>
+            <WalletMultiButton className="!bg-[#2A2A2A] hover:!bg-[#3A3A3A] !text-[#E2FF66] !border !border-[#E2FF66]" />
           </div>
         </div>
 
