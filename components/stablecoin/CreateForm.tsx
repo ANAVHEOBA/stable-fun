@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useStablecoinProgram } from '@/lib/hooks/useStablecoinProgram';
+import { useStablecoin } from '@/lib/hooks/useStablecoin';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { Card } from '../common/Card';
@@ -11,8 +11,10 @@ import {
   DollarSign, 
   AlertCircle, 
   Info,
-  ChevronRight 
+  ChevronRight,
+  ChevronLeft 
 } from 'lucide-react';
+import { PublicKey } from '@solana/web3.js';
 
 interface FormData {
   name: string;
@@ -20,19 +22,23 @@ interface FormData {
   description: string;
   collateralAmount: string;
   targetCurrency: string;
+  priceFeed: string;
 }
 
 export function CreateForm() {
   const { publicKey } = useWallet();
-  const { program, loading: programLoading, error: programError } = useStablecoinProgram();
+  const { createStablecoin, loading: stablecoinLoading, error: stablecoinError } = useStablecoin();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<FormData>({
     name: '',
     symbol: '',
     description: '',
     collateralAmount: '',
-    targetCurrency: 'USD'
+    targetCurrency: 'USD',
+    priceFeed: '' // Switchboard price feed address
   });
 
   const currencies = [
@@ -44,25 +50,57 @@ export function CreateForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!publicKey || !program) return;
+    if (!publicKey) {
+      setError('Please connect your wallet');
+      return;
+    }
 
     setLoading(true);
+    setError(null);
+
     try {
-      const signature = await program.initialize({
+      // Validate inputs
+      if (!formData.name || !formData.symbol || !formData.collateralAmount) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      // Validate price feed address
+      let priceFeedPubkey: PublicKey;
+      try {
+        priceFeedPubkey = new PublicKey(formData.priceFeed);
+      } catch {
+        throw new Error('Invalid price feed address');
+      }
+
+      const params = {
         name: formData.name,
         symbol: formData.symbol,
         targetCurrency: formData.targetCurrency,
-        initialSupply: Number(formData.collateralAmount)
-      });
+        initialSupply: parseInt(formData.collateralAmount),
+        collateralAmount: parseInt(formData.collateralAmount),
+        priceFeed: priceFeedPubkey
+      };
 
+      const signature = await createStablecoin(params);
       console.log("Created stablecoin:", signature);
-      // Add success notification here
-    } catch (error) {
-      console.error("Failed to create stablecoin:", error);
-      // Add error notification here
+      
+      // Show success message or redirect
+      // router.push(`/stablecoins/${signature}`);
+      
+    } catch (err) {
+      console.error("Failed to create stablecoin:", err);
+      setError(err instanceof Error ? err.message : 'Failed to create stablecoin');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNext = () => {
+    if (step < 3) setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
   };
 
   return (
@@ -91,6 +129,21 @@ export function CreateForm() {
         ))}
       </div>
 
+      {/* Error Display */}
+      {(error || stablecoinError) && (
+        <div className="bg-red-900/20 border border-red-400/20 rounded-lg p-4">
+          <div className="flex">
+            <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="ml-3">
+              <p className="text-sm text-red-400">
+                {error || stablecoinError}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 1: Basic Information */}
       {step === 1 && (
         <Card title="Basic Information">
           <div className="space-y-4">
@@ -119,6 +172,7 @@ export function CreateForm() {
         </Card>
       )}
 
+      {/* Step 2: Configuration */}
       {step === 2 && (
         <Card title="Configuration">
           <div className="space-y-4">
@@ -148,10 +202,18 @@ export function CreateForm() {
               onChange={(e) => setFormData({ ...formData, collateralAmount: e.target.value })}
               required
             />
+            <Input
+              label="Price Feed Address"
+              placeholder="Switchboard Oracle Address"
+              value={formData.priceFeed}
+              onChange={(e) => setFormData({ ...formData, priceFeed: e.target.value })}
+              required
+            />
           </div>
         </Card>
       )}
 
+      {/* Step 3: Review */}
       {step === 3 && (
         <Card title="Review & Create">
           <div className="space-y-6">
@@ -172,6 +234,10 @@ export function CreateForm() {
                 <p className="text-sm text-gray-400">Initial Collateral</p>
                 <p className="text-white">${formData.collateralAmount}</p>
               </div>
+              <div className="col-span-2">
+                <p className="text-sm text-gray-400">Price Feed</p>
+                <p className="text-white break-all">{formData.priceFeed}</p>
+              </div>
             </div>
 
             <div className="bg-yellow-900/20 border border-yellow-400/20 rounded-lg p-4">
@@ -189,25 +255,30 @@ export function CreateForm() {
         </Card>
       )}
 
+      {/* Navigation Buttons */}
       <div className="flex justify-between">
         {step > 1 && (
           <Button 
-          type="submit"
-          isLoading={loading || programLoading}
-          disabled={!publicKey || !program}
-        >
-          Create Stablecoin
-        </Button>
+            type="button"
+            onClick={handleBack}
+            variant="secondary"
+            leftIcon={<ChevronLeft className="h-4 w-4" />}
+          >
+            Back
+          </Button>
         )}
         
-        <Button
-          type={step === 3 ? 'submit' : 'button'}
-          onClick={() => step < 3 && setStep(step + 1)}
-          isLoading={loading}
-          rightIcon={step < 3 ? <ChevronRight className="h-4 w-4" /> : undefined}
-        >
-          {step === 3 ? 'Create Stablecoin' : 'Next'}
-        </Button>
+        <div className="ml-auto">
+          <Button
+            type={step === 3 ? 'submit' : 'button'}
+            onClick={step < 3 ? handleNext : undefined}
+            isLoading={loading || stablecoinLoading}
+            disabled={!publicKey}
+            rightIcon={step < 3 ? <ChevronRight className="h-4 w-4" /> : undefined}
+          >
+            {step === 3 ? 'Create Stablecoin' : 'Next'}
+          </Button>
+        </div>
       </div>
     </form>
   );

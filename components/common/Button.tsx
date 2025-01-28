@@ -3,6 +3,7 @@ import { VariantProps, cva } from 'class-variance-authority';
 import { cn } from '../../lib/utils/format';
 import { Loader2 } from 'lucide-react';
 
+// Define button variants using class-variance-authority
 const buttonVariants = cva(
   'inline-flex items-center justify-center rounded-lg transition-colors duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
   {
@@ -31,6 +32,7 @@ const buttonVariants = cva(
   }
 );
 
+// Button Props interface
 interface ButtonProps 
   extends ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
@@ -39,6 +41,7 @@ interface ButtonProps
   rightIcon?: React.ReactNode;
 }
 
+// Button component with forwardRef
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ 
     className, 

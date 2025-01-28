@@ -1,6 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useStablecoin } from '../../../lib/hooks/useStablecoin';
+import { PublicKey } from '@solana/web3.js';
+import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
   Upload, 
@@ -19,8 +23,12 @@ interface FormData {
 }
 
 export default function CreateStablecoinPage() {
+  const router = useRouter();
+  const { publicKey } = useWallet();
+  const { createStablecoin, loading: stablecoinLoading } = useStablecoin();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -51,17 +59,52 @@ export default function CreateStablecoinPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!publicKey) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+
     try {
-      // Add your stablecoin creation logic here
-      console.log('Creating stablecoin:', formData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    } catch (error) {
-      console.error('Error creating stablecoin:', error);
+      // Convert collateral amount to proper number
+      const collateralAmount = parseFloat(formData.collateralAmount);
+      if (isNaN(collateralAmount) || collateralAmount <= 0) {
+        throw new Error('Invalid collateral amount');
+      }
+
+      // Use a default price feed for testing (replace with actual price feed)
+      const defaultPriceFeed = new PublicKey("FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf");
+
+      // Create the stablecoin
+      const tx = await createStablecoin({
+        name: formData.name,
+        symbol: formData.symbol,
+        targetCurrency: formData.targetCurrency,
+        initialSupply: collateralAmount * 1e9, // Convert to smallest units
+        collateralAmount: collateralAmount * 1e9, // Convert to smallest units
+        priceFeed: defaultPriceFeed,
+      });
+
+      console.log('Stablecoin created successfully:', tx);
+      
+      // Redirect to dashboard after successful creation
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Error creating stablecoin:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create stablecoin');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNext = () => {
+    if (step < 3) setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
   };
 
   return (
@@ -109,12 +152,19 @@ export default function CreateStablecoinPage() {
           </div>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-900/20 border border-red-400/20 rounded-lg">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
+
         {/* Form Card */}
         <div className="bg-[#1A1A1A] rounded-lg border border-[#2A2A2A] p-6">
           <form onSubmit={handleSubmit}>
+            {/* Step 1: Basic Info */}
             {step === 1 && (
               <div className="space-y-6">
-                {/* Basic Info Fields */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Stablecoin Name
@@ -126,6 +176,7 @@ export default function CreateStablecoinPage() {
                     className="w-full bg-[#121212] border border-[#2A2A2A] rounded-lg px-4 py-2.5 
                       text-white focus:ring-2 focus:ring-[#E2FF66] focus:border-transparent"
                     placeholder="e.g., My USD Stablecoin"
+                    required
                   />
                 </div>
 
@@ -140,44 +191,29 @@ export default function CreateStablecoinPage() {
                     className="w-full bg-[#121212] border border-[#2A2A2A] rounded-lg px-4 py-2.5 
                       text-white focus:ring-2 focus:ring-[#E2FF66] focus:border-transparent"
                     placeholder="e.g., USDS"
+                    required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Icon
+                    Description
                   </label>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 rounded-lg bg-[#2A2A2A] flex items-center justify-center">
-                      {previewImage ? (
-                        <img 
-                          src={previewImage} 
-                          alt="Token icon" 
-                          className="w-full h-full rounded-lg object-cover"
-                        />
-                      ) : (
-                        <Upload className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
-                    <label className="cursor-pointer">
-                      <span className="bg-[#2A2A2A] text-gray-300 px-4 py-2 rounded-lg hover:bg-[#3A3A3A] transition-colors duration-200">
-                        Upload Icon
-                      </span>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                      />
-                    </label>
-                  </div>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full bg-[#121212] border border-[#2A2A2A] rounded-lg px-4 py-2.5 
+                      text-white focus:ring-2 focus:ring-[#E2FF66] focus:border-transparent"
+                    placeholder="Describe your stablecoin..."
+                    rows={4}
+                  />
                 </div>
               </div>
             )}
 
+            {/* Step 2: Configuration */}
             {step === 2 && (
               <div className="space-y-6">
-                {/* Configuration Fields */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Target Currency
@@ -187,6 +223,7 @@ export default function CreateStablecoinPage() {
                     onChange={(e) => setFormData({...formData, targetCurrency: e.target.value})}
                     className="w-full bg-[#121212] border border-[#2A2A2A] rounded-lg px-4 py-2.5 
                       text-white focus:ring-2 focus:ring-[#E2FF66] focus:border-transparent"
+                    required
                   >
                     {currencies.map((currency) => (
                       <option key={currency.value} value={currency.value}>
@@ -201,6 +238,7 @@ export default function CreateStablecoinPage() {
                     Initial Collateral Amount
                   </label>
                   <div className="relative">
+                    <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
                       type="number"
                       value={formData.collateralAmount}
@@ -208,25 +246,18 @@ export default function CreateStablecoinPage() {
                       className="w-full bg-[#121212] border border-[#2A2A2A] rounded-lg px-4 py-2.5 
                         text-white focus:ring-2 focus:ring-[#E2FF66] focus:border-transparent pl-10"
                       placeholder="0.00"
+                      required
+                      min="0"
+                      step="0.01"
                     />
-                    <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   </div>
-                </div>
-
-                {/* Info Box */}
-                <div className="bg-[#2A2A2A] rounded-lg p-4 flex items-start space-x-3">
-                  <Info className="h-5 w-5 text-[#E2FF66] flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-gray-300">
-                    The initial collateral amount will be used to mint your first batch of stablecoins. 
-                    Make sure you have sufficient funds in your wallet.
-                  </p>
                 </div>
               </div>
             )}
 
+            {/* Step 3: Review */}
             {step === 3 && (
               <div className="space-y-6">
-                {/* Review Information */}
                 <div className="bg-[#2A2A2A] rounded-lg p-6">
                   <h3 className="text-lg font-medium text-white mb-4">Review Information</h3>
                   
@@ -250,12 +281,14 @@ export default function CreateStablecoinPage() {
                   </div>
                 </div>
 
-                {/* Warning Box */}
-                <div className="bg-yellow-900/20 border border-yellow-400/20 rounded-lg p-4 flex items-start space-x-3">
-                  <AlertCircle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-yellow-400">
-                    Please review all information carefully. Once created, some parameters cannot be modified.
-                  </p>
+                <div className="bg-yellow-900/20 border border-yellow-400/20 rounded-lg p-4">
+                  <div className="flex">
+                    <AlertCircle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <p className="ml-3 text-sm text-yellow-400">
+                      Please review all information carefully. Once created, some parameters 
+                      cannot be modified.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -265,7 +298,7 @@ export default function CreateStablecoinPage() {
               {step > 1 && (
                 <button
                   type="button"
-                  onClick={() => setStep(step - 1)}
+                  onClick={handleBack}
                   className="px-6 py-2.5 border border-[#2A2A2A] text-gray-300 rounded-lg 
                     hover:border-[#E2FF66] hover:text-[#E2FF66] transition-colors duration-200"
                 >
@@ -275,16 +308,21 @@ export default function CreateStablecoinPage() {
               
               <button
                 type={step === 3 ? 'submit' : 'button'}
-                onClick={() => step < 3 && setStep(step + 1)}
-                disabled={loading}
+                onClick={step === 3 ? undefined : handleNext}
+                disabled={loading || stablecoinLoading}
                 className={`px-6 py-2.5 rounded-lg transition-colors duration-200
                   ${step === 3 
                     ? 'bg-[#E2FF66] text-black hover:bg-[#B3CC4D]' 
                     : 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A]'}
-                  ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                  ${(loading || stablecoinLoading) ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
               >
-                {loading ? 'Creating...' : step === 3 ? 'Create Stablecoin' : 'Next'}
+                {loading || stablecoinLoading 
+                  ? 'Processing...' 
+                  : step === 3 
+                    ? 'Create Stablecoin' 
+                    : 'Next'
+                }
               </button>
             </div>
           </form>

@@ -1,6 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { useStablecoinProgram } from './useStablecoinProgram';
+import * as anchor from "@coral-xyz/anchor";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { IDL, StablecoinMint, StablecoinVault, StableFunProgram } from '../program/idl';
 
 interface StablecoinInfo {
   address: string;
@@ -11,42 +15,61 @@ interface StablecoinInfo {
   holders: number;
   price: number;
   yield: number;
+  settings: {
+    feeBasisPoints: number;
+    maxSupply: number;
+    minCollateralRatio: number;
+    mintPaused: boolean;
+    redeemPaused: boolean;
+  };
 }
 
 interface CreateStablecoinParams {
   name: string;
   symbol: string;
-  description: string;
-  collateralAmount: number;
   targetCurrency: string;
+  initialSupply: number;
+  collateralAmount: number;
+  priceFeed: PublicKey;
 }
 
 export function useStablecoin(stablecoinAddress?: string) {
-  const { publicKey, signTransaction } = useWallet();
+  const { publicKey } = useWallet();
+  const { program, loading: programLoading, error: programError } = useStablecoinProgram() as {
+    program: StableFunProgram | null;
+    loading: boolean;
+    error: string | null;
+  };
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Example RPC endpoint - replace with your preferred endpoint
-  const connection = new Connection('https://api.mainnet-beta.solana.com');
-
   const getStablecoinInfo = useCallback(async (address: string): Promise<StablecoinInfo> => {
+    if (!program) throw new Error('Program not initialized');
+    
     setLoading(true);
     setError(null);
 
     try {
-      // Replace with actual on-chain data fetching
-      const response = await fetch(`/api/stablecoins/${address}`);
-      const data = await response.json();
+      const stablecoinMint = new PublicKey(address);
+      const accountInfo = await (program.account as any).stablecoinMint.fetch(stablecoinMint) as StablecoinMint;
+      const vaultInfo = await (program.account as any).stablecoinVault.fetch(accountInfo.vault) as StablecoinVault;
 
       return {
         address,
-        name: data.name,
-        symbol: data.symbol,
-        totalSupply: data.totalSupply,
-        collateralAmount: data.collateralAmount,
-        holders: data.holders,
-        price: data.price,
-        yield: data.yield,
+        name: accountInfo.name,
+        symbol: accountInfo.symbol,
+        totalSupply: accountInfo.currentSupply.toNumber(),
+        collateralAmount: vaultInfo.totalCollateral.toNumber(),
+        holders: accountInfo.stats.holderCount,
+        price: 1, // TODO: Implement price fetching
+        yield: 0, // TODO: Implement yield calculation
+        settings: {
+          feeBasisPoints: accountInfo.settings.feeBasisPoints,
+          maxSupply: accountInfo.settings.maxSupply.toNumber(),
+          minCollateralRatio: accountInfo.settings.minCollateralRatio,
+          mintPaused: accountInfo.settings.mintPaused,
+          redeemPaused: accountInfo.settings.redeemPaused,
+        }
       };
     } catch (error) {
       console.error('Error fetching stablecoin info:', error);
@@ -55,38 +78,75 @@ export function useStablecoin(stablecoinAddress?: string) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [program]);
 
   const createStablecoin = useCallback(async (params: CreateStablecoinParams) => {
-    if (!publicKey || !signTransaction) {
-      throw new Error('Wallet not connected');
+    if (!program || !publicKey) {
+      throw new Error('Program not initialized or wallet not connected');
     }
 
     setLoading(true);
     setError(null);
 
     try {
-      // Replace with actual on-chain transaction
-      const transaction = new Transaction();
-      // Add your instruction here
+      const tokenMint = anchor.web3.Keypair.generate();
+      const stablebondMint = anchor.web3.Keypair.generate();
 
-      // Sign and send transaction
-      const signedTx = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
-      await connection.confirmTransaction(signature);
+      const [stablecoinMint] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("stablecoin"),
+          publicKey.toBuffer(),
+          Buffer.from(params.symbol)
+        ],
+        program.programId
+      );
 
-      return signature;
+      const [vault] = PublicKey.findProgramAddressSync(
+        [Buffer.from("vault"), stablecoinMint.toBuffer()],
+        program.programId
+      );
+
+      const [mintAuthority] = PublicKey.findProgramAddressSync(
+        [Buffer.from("mint-authority"), stablecoinMint.toBuffer()],
+        program.programId
+      );
+
+      const tx = await program.methods
+        .initialize(
+          params.name,
+          params.symbol,
+          params.targetCurrency,
+          new anchor.BN(params.initialSupply),
+          new anchor.BN(params.collateralAmount)
+        )
+        .accounts({
+          authority: publicKey,
+          stablecoinMint,
+          tokenMint: tokenMint.publicKey,
+          mintAuthority,
+          stablebondMint: stablebondMint.publicKey,
+          vault,
+          priceFeed: params.priceFeed,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        })
+        .signers([tokenMint, stablebondMint])
+        .rpc();
+
+      return tx;
     } catch (error) {
       console.error('Error creating stablecoin:', error);
-      setError('Failed to create stablecoin');
+      setError(error instanceof Error ? error.message : 'Failed to create stablecoin');
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [publicKey, signTransaction, connection]);
+  }, [program, publicKey]);
 
   const mintTokens = useCallback(async (amount: number) => {
-    if (!publicKey || !signTransaction || !stablecoinAddress) {
+    if (!program || !publicKey || !stablecoinAddress) {
       throw new Error('Invalid parameters');
     }
 
@@ -94,15 +154,36 @@ export function useStablecoin(stablecoinAddress?: string) {
     setError(null);
 
     try {
-      // Replace with actual minting logic
-      const transaction = new Transaction();
-      // Add your mint instruction here
+      const stablecoinMint = new PublicKey(stablecoinAddress);
+      const [vault] = PublicKey.findProgramAddressSync(
+        [Buffer.from("vault"), stablecoinMint.toBuffer()],
+        program.programId
+      );
 
-      const signedTx = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
-      await connection.confirmTransaction(signature);
+      const [mintAuthority] = PublicKey.findProgramAddressSync(
+        [Buffer.from("mint-authority"), stablecoinMint.toBuffer()],
+        program.programId
+      );
 
-      return signature;
+      const userTokenAccount = await anchor.utils.token.associatedAddress({
+        mint: stablecoinMint,
+        owner: publicKey
+      });
+
+      const tx = await program.methods
+        .mint(new anchor.BN(amount))
+        .accounts({
+          authority: publicKey,
+          stablecoinMint,
+          vault,
+          userTokenAccount,
+          mintAuthority,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+
+      return tx;
     } catch (error) {
       console.error('Error minting tokens:', error);
       setError('Failed to mint tokens');
@@ -110,13 +191,58 @@ export function useStablecoin(stablecoinAddress?: string) {
     } finally {
       setLoading(false);
     }
-  }, [publicKey, signTransaction, connection, stablecoinAddress]);
+  }, [program, publicKey, stablecoinAddress]);
+
+  const redeemTokens = useCallback(async (amount: number) => {
+    if (!program || !publicKey || !stablecoinAddress) {
+      throw new Error('Invalid parameters');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const stablecoinMint = new PublicKey(stablecoinAddress);
+      const [vault] = PublicKey.findProgramAddressSync(
+        [Buffer.from("vault"), stablecoinMint.toBuffer()],
+        program.programId
+      );
+
+      const userTokenAccount = await anchor.utils.token.associatedAddress({
+        mint: stablecoinMint,
+        owner: publicKey
+      });
+
+      const tx = await program.methods
+        .redeem(new anchor.BN(amount))
+        .accounts({
+          authority: publicKey,
+          stablecoinMint,
+          vault,
+          userTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+
+      return tx;
+    } catch (error) {
+      console.error('Error redeeming tokens:', error);
+      setError('Failed to redeem tokens');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [program, publicKey, stablecoinAddress]);
 
   return {
-    loading,
-    error,
+    loading: loading || programLoading,
+    error: error || programError,
     getStablecoinInfo,
     createStablecoin,
     mintTokens,
+    redeemTokens,
   };
 }
+
+export default useStablecoin;

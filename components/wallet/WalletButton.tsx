@@ -1,9 +1,8 @@
-// WalletButton.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletModalButton } from '@solana/wallet-adapter-react-ui';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Button } from '../common/Button';
 import { Wallet, ChevronDown, Copy, ExternalLink, LogOut } from 'lucide-react';
 
@@ -12,10 +11,23 @@ export function WalletButton() {
     wallet, 
     publicKey, 
     connecting,
+    connected,
     connect,
     disconnect 
   } = useWallet();
   const [showDropdown, setShowDropdown] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showDropdown && !(event.target as Element).closest('.wallet-dropdown')) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDropdown]);
 
   const shortenAddress = (address: string) => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
@@ -24,49 +36,36 @@ export function WalletButton() {
   const copyAddress = async () => {
     if (publicKey) {
       await navigator.clipboard.writeText(publicKey.toString());
-      // Add toast notification here
+      // Optional: Add toast notification here
     }
   };
 
   const viewOnExplorer = () => {
     if (publicKey) {
       window.open(
-        `https://explorer.solana.com/address/${publicKey.toString()}`,
+        `https://explorer.solana.com/address/${publicKey.toString()}?cluster=devnet`,
         '_blank'
       );
     }
   };
 
-  if (!wallet) {
+  if (!wallet || !connected) {
     return (
-      <WalletModalButton className="px-4 py-2 border border-[#E2FF66] rounded-md text-[#E2FF66] 
-        hover:bg-[#E2FF66] hover:text-black transition-colors duration-200">
-        Select Wallet
-      </WalletModalButton>
-    );
-  }
-
-  if (!publicKey) {
-    return (
-      <Button
-        variant="outline"
-        leftIcon={<Wallet className="h-4 w-4" />}
-        isLoading={connecting}
-        onClick={() => connect().catch(() => {})}
-      >
-        Connect Wallet
-      </Button>
+      <WalletMultiButton 
+        className="px-4 py-2 border border-[#E2FF66] rounded-md text-[#E2FF66] 
+          hover:bg-[#E2FF66] hover:text-black transition-colors duration-200"
+      />
     );
   }
 
   return (
-    <div className="relative">
+    <div className="relative wallet-dropdown">
       <Button
         variant="outline"
         rightIcon={<ChevronDown className="h-4 w-4" />}
         onClick={() => setShowDropdown(!showDropdown)}
       >
-        {shortenAddress(publicKey.toString())}
+        {publicKey ? shortenAddress(publicKey.toString()) : 'Connect Wallet'}
       </Button>
 
       {showDropdown && (
@@ -76,6 +75,9 @@ export function WalletButton() {
         >
           <div className="px-4 py-2 border-b border-[#2A2A2A]">
             <p className="text-sm text-gray-400">Connected with {wallet.adapter.name}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {publicKey && shortenAddress(publicKey.toString())}
+            </p>
           </div>
 
           <button

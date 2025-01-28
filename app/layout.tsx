@@ -20,9 +20,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className={inter.className}>
         <CustomWalletProvider>
-          <div className="min-h-screen bg-[#121212]">
+          <div className="min-h-screen bg-[#121212] text-white">
             {children}
           </div>
         </CustomWalletProvider>
