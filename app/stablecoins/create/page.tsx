@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useState, useEffect } from 'react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useStablecoin } from '../../../lib/hooks/useStablecoin';
 import { PublicKey } from '@solana/web3.js';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
-  Upload, 
   Info, 
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -25,11 +26,12 @@ interface FormData {
 export default function CreateStablecoinPage() {
   const router = useRouter();
   const { publicKey } = useWallet();
-  const { createStablecoin, loading: stablecoinLoading } = useStablecoin();
+  const { connection } = useConnection();
+  const { createStablecoin, loading: stablecoinLoading, error: stablecoinError } = useStablecoin();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [transactionSig, setTransactionSig] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -39,6 +41,15 @@ export default function CreateStablecoinPage() {
     collateralAmount: '',
   });
 
+  // Replace the PRICE_FEEDS constant with:
+const PRICE_FEEDS = {
+  USD: new PublicKey("FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf"),
+  // Temporary test addresses (replace with actual price feed addresses)
+  EUR: new PublicKey("FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf"), // Using USD feed temporarily
+  MXN: new PublicKey("FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf"), // Using USD feed temporarily
+  BRL: new PublicKey("FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf"), // Using USD feed temporarily
+};
+
   const currencies = [
     { value: 'USD', label: 'US Dollar (USD)' },
     { value: 'EUR', label: 'Euro (EUR)' },
@@ -46,54 +57,49 @@ export default function CreateStablecoinPage() {
     { value: 'BRL', label: 'Brazilian Real (BRL)' },
   ];
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // Handle wallet connection state
+  if (!publicKey) {
+    return (
+      <div className="min-h-screen bg-[#121212] p-6 text-center">
+        <div className="max-w-4xl mx-auto pt-20">
+          <AlertCircle className="h-16 w-16 text-[#E2FF66] mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Wallet Not Connected
+          </h2>
+          <p className="text-gray-400 mb-8">
+            Please connect your wallet to create a stablecoin
+          </p>
+          <WalletMultiButton className="bg-[#E2FF66] hover:bg-[#B3CC4D] text-black px-6 py-3 rounded-lg transition-colors mx-auto" />
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!publicKey) {
-      setError('Please connect your wallet first');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      // Convert collateral amount to proper number
       const collateralAmount = parseFloat(formData.collateralAmount);
       if (isNaN(collateralAmount) || collateralAmount <= 0) {
         throw new Error('Invalid collateral amount');
       }
 
-      // Use a default price feed for testing (replace with actual price feed)
-      const defaultPriceFeed = new PublicKey("FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf");
-
-      // Create the stablecoin
       const tx = await createStablecoin({
         name: formData.name,
         symbol: formData.symbol,
         targetCurrency: formData.targetCurrency,
-        initialSupply: collateralAmount * 1e9, // Convert to smallest units
-        collateralAmount: collateralAmount * 1e9, // Convert to smallest units
-        priceFeed: defaultPriceFeed,
+        initialSupply: collateralAmount * 1e9,
+        collateralAmount: collateralAmount * 1e9,
+        priceFeed: PRICE_FEEDS[formData.targetCurrency],
       });
 
-      console.log('Stablecoin created successfully:', tx);
-      
-      // Redirect to dashboard after successful creation
-      router.push('/dashboard');
+      setTransactionSig(tx);
+      setTimeout(() => router.push('/dashboard'), 3000);
     } catch (err) {
-      console.error('Error creating stablecoin:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create stablecoin');
+      console.error('Creation error:', err);
+      setError(err instanceof Error ? err.message : 'Transaction failed');
     } finally {
       setLoading(false);
     }
@@ -109,12 +115,12 @@ export default function CreateStablecoinPage() {
 
   return (
     <div className="min-h-screen bg-[#121212] p-6">
-      {/* Header */}
       <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <div className="flex items-center mb-8">
           <Link 
             href="/dashboard" 
-            className="text-gray-400 hover:text-[#E2FF66] transition-colors duration-200"
+            className="text-gray-400 hover:text-[#E2FF66] transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
           </Link>
@@ -122,6 +128,35 @@ export default function CreateStablecoinPage() {
             Create New Stablecoin
           </h1>
         </div>
+
+        {/* Status Indicators */}
+        {transactionSig && (
+          <div className="mb-4 p-4 bg-green-900/20 border border-green-400/20 rounded-lg">
+            <div className="flex items-center">
+              <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+              <p className="text-green-400">
+                Success!{' '}
+                <a
+                  href={`https://explorer.solana.com/tx/${transactionSig}?cluster=devnet`}
+                  target="_blank"
+                  rel="noopener"
+                  className="underline hover:text-green-300"
+                >
+                  View transaction
+                </a>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {(error || stablecoinError) && (
+          <div className="mb-4 p-4 bg-red-900/20 border border-red-400/20 rounded-lg">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+              <p className="text-red-400">{error || stablecoinError}</p>
+            </div>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="mb-8">
@@ -151,13 +186,6 @@ export default function CreateStablecoinPage() {
             ))}
           </div>
         </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-900/20 border border-red-400/20 rounded-lg">
-            <p className="text-red-400">{error}</p>
-          </div>
-        )}
 
         {/* Form Card */}
         <div className="bg-[#1A1A1A] rounded-lg border border-[#2A2A2A] p-6">
@@ -194,20 +222,6 @@ export default function CreateStablecoinPage() {
                     required
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full bg-[#121212] border border-[#2A2A2A] rounded-lg px-4 py-2.5 
-                      text-white focus:ring-2 focus:ring-[#E2FF66] focus:border-transparent"
-                    placeholder="Describe your stablecoin..."
-                    rows={4}
-                  />
-                </div>
               </div>
             )}
 
@@ -235,7 +249,7 @@ export default function CreateStablecoinPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Initial Collateral Amount
+                    Initial Collateral (in SOL)
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -259,8 +273,7 @@ export default function CreateStablecoinPage() {
             {step === 3 && (
               <div className="space-y-6">
                 <div className="bg-[#2A2A2A] rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-white mb-4">Review Information</h3>
-                  
+                  <h3 className="text-lg font-medium text-white mb-4">Review Details</h3>
                   <div className="space-y-4">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Name:</span>
@@ -275,34 +288,38 @@ export default function CreateStablecoinPage() {
                       <span className="text-white">{formData.targetCurrency}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Initial Collateral:</span>
-                      <span className="text-white">${formData.collateralAmount}</span>
+                      <span className="text-gray-400">Collateral Amount:</span>
+                      <span className="text-white">
+                        {formData.collateralAmount} SOL
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-yellow-900/20 border border-yellow-400/20 rounded-lg p-4">
-                  <div className="flex">
-                    <AlertCircle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                    <p className="ml-3 text-sm text-yellow-400">
-                      Please review all information carefully. Once created, some parameters 
-                      cannot be modified.
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-yellow-400 mr-3 flex-shrink-0" />
+                    <p className="text-sm text-yellow-400">
+                      Important: This action will create a new stablecoin on the Solana blockchain.
+                      Double-check all parameters before confirming.
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Navigation Buttons */}
+            {/* Navigation Controls */}
             <div className="mt-8 flex justify-between">
               {step > 1 && (
                 <button
                   type="button"
                   onClick={handleBack}
+                  disabled={loading || stablecoinLoading}
                   className="px-6 py-2.5 border border-[#2A2A2A] text-gray-300 rounded-lg 
-                    hover:border-[#E2FF66] hover:text-[#E2FF66] transition-colors duration-200"
+                    hover:border-[#E2FF66] hover:text-[#E2FF66] transition-colors
+                    disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  Back
                 </button>
               )}
               
@@ -310,19 +327,17 @@ export default function CreateStablecoinPage() {
                 type={step === 3 ? 'submit' : 'button'}
                 onClick={step === 3 ? undefined : handleNext}
                 disabled={loading || stablecoinLoading}
-                className={`px-6 py-2.5 rounded-lg transition-colors duration-200
+                className={`px-6 py-2.5 rounded-lg transition-colors
                   ${step === 3 
                     ? 'bg-[#E2FF66] text-black hover:bg-[#B3CC4D]' 
                     : 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A]'}
-                  ${(loading || stablecoinLoading) ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
+                  ${(loading || stablecoinLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {loading || stablecoinLoading 
                   ? 'Processing...' 
                   : step === 3 
-                    ? 'Create Stablecoin' 
-                    : 'Next'
-                }
+                    ? 'Confirm Creation' 
+                    : 'Next Step'}
               </button>
             </div>
           </form>

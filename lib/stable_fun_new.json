@@ -1,0 +1,1536 @@
+{
+    "address": "AxsQr2gYQksKWj8Xd4HSxXWDqpeRVYb9ow9ZerNWZoD",
+    "metadata": {
+      "name": "stable_fun_new",
+      "version": "0.1.0",
+      "spec": "0.1.0",
+      "description": "Created with Anchor"
+    },
+    "instructions": [
+      {
+        "name": "initialize",
+        "discriminator": [
+          175,
+          175,
+          109,
+          31,
+          13,
+          152,
+          155,
+          237
+        ],
+        "accounts": [
+          {
+            "name": "authority",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "stablecoin_mint",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    115,
+                    116,
+                    97,
+                    98,
+                    108,
+                    101,
+                    99,
+                    111,
+                    105,
+                    110
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "authority"
+                },
+                {
+                  "kind": "arg",
+                  "path": "symbol"
+                }
+              ]
+            }
+          },
+          {
+            "name": "token_mint",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "mint_authority",
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    109,
+                    105,
+                    110,
+                    116,
+                    45,
+                    97,
+                    117,
+                    116,
+                    104,
+                    111,
+                    114,
+                    105,
+                    116,
+                    121
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "stablecoin_mint"
+                }
+              ]
+            }
+          },
+          {
+            "name": "stablebond_mint",
+            "writable": true
+          },
+          {
+            "name": "vault",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    118,
+                    97,
+                    117,
+                    108,
+                    116
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "stablecoin_mint"
+                }
+              ]
+            }
+          },
+          {
+            "name": "vault_token_account",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "price_feed",
+            "docs": [
+              "Switchboard V3 aggregator account"
+            ]
+          },
+          {
+            "name": "system_program",
+            "address": "11111111111111111111111111111111"
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          {
+            "name": "rent",
+            "address": "SysvarRent111111111111111111111111111111111"
+          }
+        ],
+        "args": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "target_currency",
+            "type": "string"
+          },
+          {
+            "name": "initial_supply",
+            "type": "u64"
+          }
+        ]
+      },
+      {
+        "name": "mint",
+        "discriminator": [
+          51,
+          57,
+          225,
+          47,
+          182,
+          146,
+          137,
+          166
+        ],
+        "accounts": [
+          {
+            "name": "user",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "stablecoin_mint",
+            "writable": true
+          },
+          {
+            "name": "vault",
+            "writable": true
+          },
+          {
+            "name": "token_mint",
+            "writable": true
+          },
+          {
+            "name": "user_token_account",
+            "writable": true
+          },
+          {
+            "name": "user_stablebond_account",
+            "writable": true
+          },
+          {
+            "name": "vault_stablebond_account",
+            "writable": true
+          },
+          {
+            "name": "price_feed",
+            "docs": [
+              "The Switchboard V3 aggregator account"
+            ]
+          },
+          {
+            "name": "mint_authority",
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    109,
+                    105,
+                    110,
+                    116,
+                    45,
+                    97,
+                    117,
+                    116,
+                    104,
+                    111,
+                    114,
+                    105,
+                    116,
+                    121
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "stablecoin_mint"
+                }
+              ]
+            }
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          {
+            "name": "system_program",
+            "address": "11111111111111111111111111111111"
+          }
+        ],
+        "args": [
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      },
+      {
+        "name": "redeem",
+        "discriminator": [
+          184,
+          12,
+          86,
+          149,
+          70,
+          196,
+          97,
+          225
+        ],
+        "accounts": [
+          {
+            "name": "user",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "stablecoin_mint",
+            "writable": true
+          },
+          {
+            "name": "vault",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    118,
+                    97,
+                    117,
+                    108,
+                    116
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "stablecoin_mint"
+                }
+              ]
+            }
+          },
+          {
+            "name": "token_mint",
+            "writable": true
+          },
+          {
+            "name": "user_token_account",
+            "writable": true
+          },
+          {
+            "name": "user_stablebond_account",
+            "writable": true
+          },
+          {
+            "name": "vault_stablebond_account",
+            "writable": true
+          },
+          {
+            "name": "price_feed",
+            "docs": [
+              "The Switchboard V3 aggregator account"
+            ]
+          },
+          {
+            "name": "burn_authority",
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    109,
+                    105,
+                    110,
+                    116,
+                    45,
+                    97,
+                    117,
+                    116,
+                    104,
+                    111,
+                    114,
+                    105,
+                    116,
+                    121
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "stablecoin_mint"
+                }
+              ]
+            }
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          {
+            "name": "system_program",
+            "address": "11111111111111111111111111111111"
+          }
+        ],
+        "args": [
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      },
+      {
+        "name": "update_settings",
+        "discriminator": [
+          81,
+          166,
+          51,
+          213,
+          158,
+          84,
+          157,
+          108
+        ],
+        "accounts": [
+          {
+            "name": "authority",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "stablecoin_mint",
+            "writable": true
+          }
+        ],
+        "args": [
+          {
+            "name": "params",
+            "type": {
+              "defined": {
+                "name": "UpdateSettingsParams"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "accounts": [
+      {
+        "name": "AggregatorAccountData",
+        "discriminator": [
+          217,
+          230,
+          65,
+          101,
+          201,
+          162,
+          27,
+          125
+        ]
+      },
+      {
+        "name": "StablecoinMint",
+        "discriminator": [
+          43,
+          188,
+          66,
+          1,
+          31,
+          38,
+          18,
+          30
+        ]
+      },
+      {
+        "name": "StablecoinVault",
+        "discriminator": [
+          87,
+          94,
+          250,
+          148,
+          26,
+          113,
+          176,
+          219
+        ]
+      }
+    ],
+    "events": [
+      {
+        "name": "MetadataUpdateEvent",
+        "discriminator": [
+          177,
+          43,
+          42,
+          114,
+          177,
+          124,
+          1,
+          75
+        ]
+      },
+      {
+        "name": "MintEvent",
+        "discriminator": [
+          197,
+          144,
+          146,
+          149,
+          66,
+          164,
+          95,
+          16
+        ]
+      },
+      {
+        "name": "RedeemEvent",
+        "discriminator": [
+          90,
+          114,
+          83,
+          146,
+          212,
+          26,
+          217,
+          59
+        ]
+      },
+      {
+        "name": "SettingsUpdateEvent",
+        "discriminator": [
+          179,
+          208,
+          34,
+          119,
+          178,
+          25,
+          247,
+          44
+        ]
+      },
+      {
+        "name": "StablecoinInitialized",
+        "discriminator": [
+          238,
+          217,
+          135,
+          14,
+          147,
+          33,
+          221,
+          169
+        ]
+      }
+    ],
+    "errors": [
+      {
+        "code": 6000,
+        "name": "UnauthorizedUpdate",
+        "msg": "Unauthorized update attempt"
+      },
+      {
+        "code": 6001,
+        "name": "InvalidCollateralRatio",
+        "msg": "Invalid collateral ratio"
+      },
+      {
+        "code": 6002,
+        "name": "InvalidFee",
+        "msg": "Invalid fee percentage"
+      },
+      {
+        "code": 6003,
+        "name": "InvalidMaxSupply",
+        "msg": "Invalid max supply"
+      },
+      {
+        "code": 6004,
+        "name": "InvalidName",
+        "msg": "Invalid name"
+      },
+      {
+        "code": 6005,
+        "name": "InvalidSymbol",
+        "msg": "Invalid symbol"
+      }
+    ],
+    "types": [
+      {
+        "name": "AggregatorAccountData",
+        "serialization": "bytemuckunsafe",
+        "repr": {
+          "kind": "rust",
+          "packed": true
+        },
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "name",
+              "docs": [
+                "Name of the aggregator to store on-chain."
+              ],
+              "type": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            },
+            {
+              "name": "metadata",
+              "docs": [
+                "Metadata of the aggregator to store on-chain."
+              ],
+              "type": {
+                "array": [
+                  "u8",
+                  128
+                ]
+              }
+            },
+            {
+              "name": "_reserved1",
+              "docs": [
+                "Reserved."
+              ],
+              "type": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            },
+            {
+              "name": "queue_pubkey",
+              "docs": [
+                "Pubkey of the queue the aggregator belongs to."
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "oracle_request_batch_size",
+              "docs": [
+                "CONFIGS",
+                "Number of oracles assigned to an update request."
+              ],
+              "type": "u32"
+            },
+            {
+              "name": "min_oracle_results",
+              "docs": [
+                "Minimum number of oracle responses required before a round is validated."
+              ],
+              "type": "u32"
+            },
+            {
+              "name": "min_job_results",
+              "docs": [
+                "Minimum number of job results before an oracle accepts a result."
+              ],
+              "type": "u32"
+            },
+            {
+              "name": "min_update_delay_seconds",
+              "docs": [
+                "Minimum number of seconds required between aggregator rounds."
+              ],
+              "type": "u32"
+            },
+            {
+              "name": "start_after",
+              "docs": [
+                "Unix timestamp for which no feed update will occur before."
+              ],
+              "type": "i64"
+            },
+            {
+              "name": "variance_threshold",
+              "docs": [
+                "Change percentage required between a previous round and the current round. If variance percentage is not met, reject new oracle responses."
+              ],
+              "type": {
+                "defined": {
+                  "name": "SwitchboardDecimal"
+                }
+              }
+            },
+            {
+              "name": "force_report_period",
+              "docs": [
+                "Number of seconds for which, even if the variance threshold is not passed, accept new responses from oracles."
+              ],
+              "type": "i64"
+            },
+            {
+              "name": "expiration",
+              "docs": [
+                "Timestamp when the feed is no longer needed."
+              ],
+              "type": "i64"
+            },
+            {
+              "name": "consecutive_failure_count",
+              "docs": [
+                "Counter for the number of consecutive failures before a feed is removed from a queue. If set to 0, failed feeds will remain on the queue."
+              ],
+              "type": "u64"
+            },
+            {
+              "name": "next_allowed_update_time",
+              "docs": [
+                "Timestamp when the next update request will be available."
+              ],
+              "type": "i64"
+            },
+            {
+              "name": "is_locked",
+              "docs": [
+                "Flag for whether an aggregators configuration is locked for editing."
+              ],
+              "type": "bool"
+            },
+            {
+              "name": "crank_pubkey",
+              "docs": [
+                "Optional, public key of the crank the aggregator is currently using. Event based feeds do not need a crank."
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "latest_confirmed_round",
+              "docs": [
+                "Latest confirmed update request result that has been accepted as valid."
+              ],
+              "type": {
+                "defined": {
+                  "name": "AggregatorRound"
+                }
+              }
+            },
+            {
+              "name": "current_round",
+              "docs": [
+                "Oracle results from the current round of update request that has not been accepted as valid yet."
+              ],
+              "type": {
+                "defined": {
+                  "name": "AggregatorRound"
+                }
+              }
+            },
+            {
+              "name": "job_pubkeys_data",
+              "docs": [
+                "List of public keys containing the job definitions for how data is sourced off-chain by oracles."
+              ],
+              "type": {
+                "array": [
+                  "pubkey",
+                  16
+                ]
+              }
+            },
+            {
+              "name": "job_hashes",
+              "docs": [
+                "Used to protect against malicious RPC nodes providing incorrect task definitions to oracles before fulfillment."
+              ],
+              "type": {
+                "array": [
+                  {
+                    "defined": {
+                      "name": "Hash"
+                    }
+                  },
+                  16
+                ]
+              }
+            },
+            {
+              "name": "job_pubkeys_size",
+              "docs": [
+                "Number of jobs assigned to an oracle."
+              ],
+              "type": "u32"
+            },
+            {
+              "name": "jobs_checksum",
+              "docs": [
+                "Used to protect against malicious RPC nodes providing incorrect task definitions to oracles before fulfillment."
+              ],
+              "type": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            },
+            {
+              "name": "authority",
+              "docs": [
+                "The account delegated as the authority for making account changes."
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "history_buffer",
+              "docs": [
+                "Optional, public key of a history buffer account storing the last N accepted results and their timestamps."
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "previous_confirmed_round_result",
+              "docs": [
+                "The previous confirmed round result."
+              ],
+              "type": {
+                "defined": {
+                  "name": "SwitchboardDecimal"
+                }
+              }
+            },
+            {
+              "name": "previous_confirmed_round_slot",
+              "docs": [
+                "The slot when the previous confirmed round was opened."
+              ],
+              "type": "u64"
+            },
+            {
+              "name": "disable_crank",
+              "docs": [
+                "Whether an aggregator is permitted to join a crank."
+              ],
+              "type": "bool"
+            },
+            {
+              "name": "job_weights",
+              "docs": [
+                "Job weights used for the weighted median of the aggregator's assigned job accounts."
+              ],
+              "type": {
+                "array": [
+                  "u8",
+                  16
+                ]
+              }
+            },
+            {
+              "name": "creation_timestamp",
+              "docs": [
+                "Unix timestamp when the feed was created."
+              ],
+              "type": "i64"
+            },
+            {
+              "name": "resolution_mode",
+              "docs": [
+                "Use sliding window or round based resolution",
+                "NOTE: This changes result propogation in latest_round_result"
+              ],
+              "type": {
+                "defined": {
+                  "name": "AggregatorResolutionMode"
+                }
+              }
+            },
+            {
+              "name": "base_priority_fee",
+              "type": "u32"
+            },
+            {
+              "name": "priority_fee_bump",
+              "type": "u32"
+            },
+            {
+              "name": "priority_fee_bump_period",
+              "type": "u32"
+            },
+            {
+              "name": "max_priority_fee_multiplier",
+              "type": "u32"
+            },
+            {
+              "name": "parent_function",
+              "type": "pubkey"
+            },
+            {
+              "name": "_ebuf",
+              "docs": [
+                "Reserved for future info."
+              ],
+              "type": {
+                "array": [
+                  "u8",
+                  90
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "AggregatorResolutionMode",
+        "repr": {
+          "kind": "rust"
+        },
+        "type": {
+          "kind": "enum",
+          "variants": [
+            {
+              "name": "ModeRoundResolution"
+            },
+            {
+              "name": "ModeSlidingResolution"
+            }
+          ]
+        }
+      },
+      {
+        "name": "AggregatorRound",
+        "serialization": "bytemuckunsafe",
+        "repr": {
+          "kind": "rust",
+          "packed": true
+        },
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "num_success",
+              "docs": [
+                "Maintains the number of successful responses received from nodes.",
+                "Nodes can submit one successful response per round."
+              ],
+              "type": "u32"
+            },
+            {
+              "name": "num_error",
+              "docs": [
+                "Number of error responses."
+              ],
+              "type": "u32"
+            },
+            {
+              "name": "is_closed",
+              "docs": [
+                "Whether an update request round has ended."
+              ],
+              "type": "bool"
+            },
+            {
+              "name": "round_open_slot",
+              "docs": [
+                "Maintains the `solana_program::clock::Slot` that the round was opened at."
+              ],
+              "type": "u64"
+            },
+            {
+              "name": "round_open_timestamp",
+              "docs": [
+                "Maintains the `solana_program::clock::UnixTimestamp;` the round was opened at."
+              ],
+              "type": "i64"
+            },
+            {
+              "name": "result",
+              "docs": [
+                "Maintains the current median of all successful round responses."
+              ],
+              "type": {
+                "defined": {
+                  "name": "SwitchboardDecimal"
+                }
+              }
+            },
+            {
+              "name": "std_deviation",
+              "docs": [
+                "Standard deviation of the accepted results in the round."
+              ],
+              "type": {
+                "defined": {
+                  "name": "SwitchboardDecimal"
+                }
+              }
+            },
+            {
+              "name": "min_response",
+              "docs": [
+                "Maintains the minimum node response this round."
+              ],
+              "type": {
+                "defined": {
+                  "name": "SwitchboardDecimal"
+                }
+              }
+            },
+            {
+              "name": "max_response",
+              "docs": [
+                "Maintains the maximum node response this round."
+              ],
+              "type": {
+                "defined": {
+                  "name": "SwitchboardDecimal"
+                }
+              }
+            },
+            {
+              "name": "oracle_pubkeys_data",
+              "docs": [
+                "Pubkeys of the oracles fulfilling this round."
+              ],
+              "type": {
+                "array": [
+                  "pubkey",
+                  16
+                ]
+              }
+            },
+            {
+              "name": "medians_data",
+              "docs": [
+                "Represents all successful node responses this round. `NaN` if empty."
+              ],
+              "type": {
+                "array": [
+                  {
+                    "defined": {
+                      "name": "SwitchboardDecimal"
+                    }
+                  },
+                  16
+                ]
+              }
+            },
+            {
+              "name": "current_payout",
+              "docs": [
+                "Current rewards/slashes oracles have received this round."
+              ],
+              "type": {
+                "array": [
+                  "i64",
+                  16
+                ]
+              }
+            },
+            {
+              "name": "medians_fulfilled",
+              "docs": [
+                "Keep track of which responses are fulfilled here."
+              ],
+              "type": {
+                "array": [
+                  "bool",
+                  16
+                ]
+              }
+            },
+            {
+              "name": "errors_fulfilled",
+              "docs": [
+                "Keeps track of which errors are fulfilled here."
+              ],
+              "type": {
+                "array": [
+                  "bool",
+                  16
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Hash",
+        "serialization": "bytemuckunsafe",
+        "repr": {
+          "kind": "rust",
+          "packed": true
+        },
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "data",
+              "docs": [
+                "The bytes used to derive the hash."
+              ],
+              "type": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "MetadataUpdateEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "stablecoin_mint",
+              "type": "pubkey"
+            },
+            {
+              "name": "authority",
+              "type": "pubkey"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "symbol",
+              "type": "string"
+            },
+            {
+              "name": "timestamp",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "MintEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "stablecoin_mint",
+              "type": "pubkey"
+            },
+            {
+              "name": "user",
+              "type": "pubkey"
+            },
+            {
+              "name": "amount",
+              "type": "u64"
+            },
+            {
+              "name": "fee_amount",
+              "type": "u64"
+            },
+            {
+              "name": "collateral_amount",
+              "type": "u64"
+            },
+            {
+              "name": "timestamp",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "RedeemEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "stablecoin_mint",
+              "type": "pubkey"
+            },
+            {
+              "name": "user",
+              "type": "pubkey"
+            },
+            {
+              "name": "amount",
+              "type": "u64"
+            },
+            {
+              "name": "fee_amount",
+              "type": "u64"
+            },
+            {
+              "name": "collateral_amount",
+              "type": "u64"
+            },
+            {
+              "name": "timestamp",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "SettingsUpdateEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "stablecoin_mint",
+              "type": "pubkey"
+            },
+            {
+              "name": "authority",
+              "type": "pubkey"
+            },
+            {
+              "name": "old_settings",
+              "type": {
+                "defined": {
+                  "name": "StablecoinSettings"
+                }
+              }
+            },
+            {
+              "name": "new_settings",
+              "type": {
+                "defined": {
+                  "name": "StablecoinSettings"
+                }
+              }
+            },
+            {
+              "name": "timestamp",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "StablecoinInitialized",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "stablecoin_mint",
+              "type": "pubkey"
+            },
+            {
+              "name": "authority",
+              "type": "pubkey"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "symbol",
+              "type": "string"
+            },
+            {
+              "name": "target_currency",
+              "type": "string"
+            },
+            {
+              "name": "timestamp",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "StablecoinMint",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "authority",
+              "docs": [
+                "The authority who can update settings"
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "name",
+              "docs": [
+                "Name of the stablecoin"
+              ],
+              "type": "string"
+            },
+            {
+              "name": "symbol",
+              "docs": [
+                "Symbol of the stablecoin (e.g., \"USDX\")"
+              ],
+              "type": "string"
+            },
+            {
+              "name": "target_currency",
+              "docs": [
+                "Target fiat currency (e.g., \"USD\", \"MXN\")"
+              ],
+              "type": "string"
+            },
+            {
+              "name": "token_mint",
+              "docs": [
+                "The SPL token mint address"
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "stablebond_mint",
+              "docs": [
+                "The stablebond token mint used as collateral"
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "price_feed",
+              "docs": [
+                "The oracle feed for price data"
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "vault",
+              "docs": [
+                "Vault holding the collateral"
+              ],
+              "type": "pubkey"
+            },
+            {
+              "name": "current_supply",
+              "docs": [
+                "Current supply of the stablecoin"
+              ],
+              "type": "u64"
+            },
+            {
+              "name": "settings",
+              "docs": [
+                "Configuration settings"
+              ],
+              "type": {
+                "defined": {
+                  "name": "StablecoinSettings"
+                }
+              }
+            },
+            {
+              "name": "stats",
+              "docs": [
+                "Statistics and metrics"
+              ],
+              "type": {
+                "defined": {
+                  "name": "StablecoinStats"
+                }
+              }
+            },
+            {
+              "name": "created_at",
+              "docs": [
+                "Timestamp when the stablecoin was created"
+              ],
+              "type": "i64"
+            },
+            {
+              "name": "last_updated",
+              "docs": [
+                "Last time settings were updated"
+              ],
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "StablecoinSettings",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "fee_basis_points",
+              "docs": [
+                "Fee in basis points (1/10000)"
+              ],
+              "type": "u16"
+            },
+            {
+              "name": "max_supply",
+              "docs": [
+                "Maximum supply of stablecoins"
+              ],
+              "type": "u64"
+            },
+            {
+              "name": "min_collateral_ratio",
+              "docs": [
+                "Minimum collateral ratio (e.g. 150%)"
+              ],
+              "type": "u16"
+            },
+            {
+              "name": "mint_paused",
+              "docs": [
+                "Whether minting is paused"
+              ],
+              "type": "bool"
+            },
+            {
+              "name": "redeem_paused",
+              "docs": [
+                "Whether redeeming is paused"
+              ],
+              "type": "bool"
+            }
+          ]
+        }
+      },
+      {
+        "name": "StablecoinStats",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "total_minted",
+              "docs": [
+                "Total amount of stablecoins minted"
+              ],
+              "type": "u64"
+            },
+            {
+              "name": "total_burned",
+              "docs": [
+                "Total amount of stablecoins burned"
+              ],
+              "type": "u64"
+            },
+            {
+              "name": "total_fees",
+              "docs": [
+                "Total fees collected"
+              ],
+              "type": "u64"
+            },
+            {
+              "name": "holder_count",
+              "docs": [
+                "Number of unique holders"
+              ],
+              "type": "u32"
+            },
+            {
+              "name": "reserved",
+              "docs": [
+                "Reserved for future use"
+              ],
+              "type": {
+                "array": [
+                  "u8",
+                  24
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "StablecoinVault",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "stablecoin_mint",
+              "type": "pubkey"
+            },
+            {
+              "name": "authority",
+              "type": "pubkey"
+            },
+            {
+              "name": "collateral_account",
+              "type": "pubkey"
+            },
+            {
+              "name": "total_collateral",
+              "type": "u64"
+            },
+            {
+              "name": "total_value_locked",
+              "type": "u64"
+            },
+            {
+              "name": "current_ratio",
+              "type": "u16"
+            },
+            {
+              "name": "last_deposit_time",
+              "type": "i64"
+            },
+            {
+              "name": "last_withdrawal_time",
+              "type": "i64"
+            },
+            {
+              "name": "deposit_count",
+              "type": "u32"
+            },
+            {
+              "name": "withdrawal_count",
+              "type": "u32"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "SwitchboardDecimal",
+        "serialization": "bytemuckunsafe",
+        "repr": {
+          "kind": "rust",
+          "packed": true
+        },
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "mantissa",
+              "docs": [
+                "The part of a floating-point number that represents the significant digits of that number, and that is multiplied by the base, 10, raised to the power of scale to give the actual value of the number."
+              ],
+              "type": "i128"
+            },
+            {
+              "name": "scale",
+              "docs": [
+                "The number of decimal places to move to the left to yield the actual value."
+              ],
+              "type": "u32"
+            }
+          ]
+        }
+      },
+      {
+        "name": "UpdateSettingsParams",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "min_collateral_ratio",
+              "type": {
+                "option": "u16"
+              }
+            },
+            {
+              "name": "fee_basis_points",
+              "type": {
+                "option": "u16"
+              }
+            },
+            {
+              "name": "max_supply",
+              "type": {
+                "option": "u64"
+              }
+            },
+            {
+              "name": "mint_paused",
+              "type": {
+                "option": "bool"
+              }
+            },
+            {
+              "name": "redeem_paused",
+              "type": {
+                "option": "bool"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }

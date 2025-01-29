@@ -1,11 +1,13 @@
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useMemo, useState } from 'react';
 import * as anchor from "@coral-xyz/anchor";
-import { IDL, StableFunProgram } from '../program/idl';
 import { Connection, PublicKey } from '@solana/web3.js';
-import type { WalletContextState } from '@solana/wallet-adapter-react';
+import IDL from '../stable_fun_new.json';
 
 const PROGRAM_ID = new PublicKey("AxsQr2gYQksKWj8Xd4HSxXWDqpeRVYb9ow9ZerNWZoD");
+
+// Create program type from the JSON
+type StableFunProgram = anchor.Program<typeof IDL>;
 
 interface StablecoinProgramState {
   program: StableFunProgram | null;
@@ -20,35 +22,28 @@ interface StablecoinProgramState {
   };
 }
 
-// Create a wrapper to make wallet-adapter-react's WalletContextState compatible with Anchor
-const createAnchorWallet = (wallet: WalletContextState) => {
-  if (!wallet.publicKey || !wallet.signTransaction || !wallet.signAllTransactions) {
-    return null;
-  }
-  
-  return {
-    publicKey: wallet.publicKey,
-    signTransaction: wallet.signTransaction,
-    signAllTransactions: wallet.signAllTransactions,
-  };
-};
-
 export function useStablecoinProgram(): StablecoinProgramState {
-  const wallet = useWallet();
+  const { publicKey, signTransaction, signAllTransactions } = useWallet();
   const { connection } = useConnection();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const provider = useMemo(() => {
-    const anchorWallet = createAnchorWallet(wallet);
-    if (!anchorWallet) {
+    if (!publicKey || !signTransaction || !signAllTransactions) {
+      console.log("Wallet not connected or missing required methods");
       return null;
     }
 
     try {
+      const wallet = {
+        publicKey,
+        signTransaction,
+        signAllTransactions,
+      };
+
       const provider = new anchor.AnchorProvider(
         connection,
-        anchorWallet as anchor.Wallet,
+        wallet,
         { commitment: 'confirmed', preflightCommitment: 'confirmed' }
       );
       anchor.setProvider(provider);
@@ -57,21 +52,48 @@ export function useStablecoinProgram(): StablecoinProgramState {
       console.error("Provider initialization error:", err);
       return null;
     }
-  }, [connection, wallet]);
+  }, [connection, publicKey, signTransaction, signAllTransactions]);
 
   const program = useMemo(() => {
     if (!provider) {
-      setError("Wallet not connected");
+      console.log("Provider not available");
       return null;
     }
-
+  
     try {
       setLoading(true);
-      return new anchor.Program(
-        IDL,
-        PROGRAM_ID,
+      
+      // Create a modified IDL with account types and sizes
+      const modifiedIdl = {
+        ...IDL,
+        accounts: IDL.types
+          .filter(t => t.type.kind === 'struct')
+          .map(t => ({
+            name: t.name,
+            type: {
+              kind: 'struct',
+              fields: t.type.fields || []
+            },
+            size: 1000 // Default size for all accounts
+          }))
+      };
+
+      // Log the modified IDL for debugging
+      console.log("Creating program with IDL:", {
+        version: modifiedIdl.metadata?.version,
+        name: modifiedIdl.metadata?.name,
+        accountCount: modifiedIdl.accounts?.length,
+        instructionCount: modifiedIdl.instructions?.length
+      });
+      
+      const program = new anchor.Program(
+        modifiedIdl as anchor.Idl,
+        PROGRAM_ID.toString(),
         provider
       ) as StableFunProgram;
+      
+      console.log("Program created successfully");
+      return program;
     } catch (err) {
       console.error("Program initialization error:", err);
       setError("Failed to initialize program");
@@ -81,12 +103,10 @@ export function useStablecoinProgram(): StablecoinProgramState {
     }
   }, [provider]);
 
-  // Helper function to derive PDA (Program Derived Address)
   const findProgramAddress = async (seeds: Buffer[], programId: PublicKey = PROGRAM_ID) => {
     return await PublicKey.findProgramAddress(seeds, programId);
   };
 
-  // Helper function to get stablecoin mint PDA
   const getStablecoinMintPDA = async (authority: PublicKey, symbol: string) => {
     const [pda] = await findProgramAddress([
       Buffer.from("stablecoin"),
@@ -96,7 +116,6 @@ export function useStablecoinProgram(): StablecoinProgramState {
     return pda;
   };
 
-  // Helper function to get vault PDA
   const getVaultPDA = async (stablecoinMint: PublicKey) => {
     const [pda] = await findProgramAddress([
       Buffer.from("vault"),
@@ -105,7 +124,6 @@ export function useStablecoinProgram(): StablecoinProgramState {
     return pda;
   };
 
-  // Helper function to get mint authority PDA
   const getMintAuthorityPDA = async (stablecoinMint: PublicKey) => {
     const [pda] = await findProgramAddress([
       Buffer.from("mint-authority"),
@@ -126,48 +144,6 @@ export function useStablecoinProgram(): StablecoinProgramState {
       getMintAuthorityPDA
     }
   };
-}
-
-// Helper types remain unchanged...
-export interface StablecoinMintAccount {
-  authority: PublicKey;
-  name: string;
-  symbol: string;
-  targetCurrency: string;
-  tokenMint: PublicKey;
-  stablebondMint: PublicKey;
-  priceFeed: PublicKey;
-  vault: PublicKey;
-  currentSupply: anchor.BN;
-  settings: {
-    feeBasisPoints: number;
-    maxSupply: anchor.BN;
-    minCollateralRatio: number;
-    mintPaused: boolean;
-    redeemPaused: boolean;
-  };
-  stats: {
-    totalMinted: anchor.BN;
-    totalBurned: anchor.BN;
-    totalFees: anchor.BN;
-    holderCount: number;
-  };
-  createdAt: anchor.BN;
-  lastUpdated: anchor.BN;
-}
-
-export interface StablecoinVaultAccount {
-  stablecoinMint: PublicKey;
-  authority: PublicKey;
-  collateralAccount: PublicKey;
-  totalCollateral: anchor.BN;
-  totalValueLocked: anchor.BN;
-  currentRatio: number;
-  lastDepositTime: anchor.BN;
-  lastWithdrawalTime: anchor.BN;
-  depositCount: number;
-  withdrawalCount: number;
-  bump: number;
 }
 
 export default useStablecoinProgram;

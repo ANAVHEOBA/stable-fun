@@ -1,10 +1,36 @@
 import { useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { useStablecoinProgram } from './useStablecoinProgram';
 import * as anchor from "@coral-xyz/anchor";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { IDL, StablecoinMint, StablecoinVault, StableFunProgram } from '../program/idl';
+import IDL from '../stable_fun_new.json';
+
+// Create types from the JSON structure
+type StableFunProgram = anchor.Program<typeof IDL>;
+
+// Extract types from IDL
+type StablecoinMint = {
+  authority: PublicKey;
+  name: string;
+  symbol: string;
+  currentSupply: anchor.BN;
+  vault: PublicKey;
+  stats: {
+    holderCount: number;
+  };
+  settings: {
+    feeBasisPoints: number;
+    maxSupply: anchor.BN;
+    minCollateralRatio: number;
+    mintPaused: boolean;
+    redeemPaused: boolean;
+  };
+};
+
+type StablecoinVault = {
+  totalCollateral: anchor.BN;
+};
 
 interface StablecoinInfo {
   address: string;
@@ -35,11 +61,7 @@ interface CreateStablecoinParams {
 
 export function useStablecoin(stablecoinAddress?: string) {
   const { publicKey } = useWallet();
-  const { program, loading: programLoading, error: programError } = useStablecoinProgram() as {
-    program: StableFunProgram | null;
-    loading: boolean;
-    error: string | null;
-  };
+  const { program, loading: programLoading, error: programError } = useStablecoinProgram();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,8 +73,8 @@ export function useStablecoin(stablecoinAddress?: string) {
 
     try {
       const stablecoinMint = new PublicKey(address);
-      const accountInfo = await (program.account as any).stablecoinMint.fetch(stablecoinMint) as StablecoinMint;
-      const vaultInfo = await (program.account as any).stablecoinVault.fetch(accountInfo.vault) as StablecoinVault;
+      const accountInfo = await program.account.stablecoinMint.fetch(stablecoinMint) as StablecoinMint;
+      const vaultInfo = await program.account.stablecoinVault.fetch(accountInfo.vault) as StablecoinVault;
 
       return {
         address,
@@ -82,6 +104,7 @@ export function useStablecoin(stablecoinAddress?: string) {
 
   const createStablecoin = useCallback(async (params: CreateStablecoinParams) => {
     if (!program || !publicKey) {
+      console.error('Program state:', { program: !!program, publicKey: !!publicKey });
       throw new Error('Program not initialized or wallet not connected');
     }
 
@@ -91,6 +114,9 @@ export function useStablecoin(stablecoinAddress?: string) {
     try {
       const tokenMint = anchor.web3.Keypair.generate();
       const stablebondMint = anchor.web3.Keypair.generate();
+
+      // Create vault token account
+      const vaultTokenAccount = anchor.web3.Keypair.generate();
 
       const [stablecoinMint] = PublicKey.findProgramAddressSync(
         [
@@ -111,6 +137,14 @@ export function useStablecoin(stablecoinAddress?: string) {
         program.programId
       );
 
+      console.log('Initializing with params:', {
+        name: params.name,
+        symbol: params.symbol,
+        targetCurrency: params.targetCurrency,
+        initialSupply: params.initialSupply,
+        collateralAmount: params.collateralAmount
+      });
+
       const tx = await program.methods
         .initialize(
           params.name,
@@ -126,15 +160,17 @@ export function useStablecoin(stablecoinAddress?: string) {
           mintAuthority,
           stablebondMint: stablebondMint.publicKey,
           vault,
+          vaultTokenAccount: vaultTokenAccount.publicKey,
           priceFeed: params.priceFeed,
           systemProgram: anchor.web3.SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         })
-        .signers([tokenMint, stablebondMint])
+        .signers([tokenMint, stablebondMint, vaultTokenAccount])
         .rpc();
 
+      console.log('Transaction successful:', tx);
       return tx;
     } catch (error) {
       console.error('Error creating stablecoin:', error);
@@ -173,7 +209,7 @@ export function useStablecoin(stablecoinAddress?: string) {
       const tx = await program.methods
         .mint(new anchor.BN(amount))
         .accounts({
-          authority: publicKey,
+          user: publicKey,
           stablecoinMint,
           vault,
           userTokenAccount,
@@ -216,7 +252,7 @@ export function useStablecoin(stablecoinAddress?: string) {
       const tx = await program.methods
         .redeem(new anchor.BN(amount))
         .accounts({
-          authority: publicKey,
+          user: publicKey,
           stablecoinMint,
           vault,
           userTokenAccount,
